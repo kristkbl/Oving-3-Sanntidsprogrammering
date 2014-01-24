@@ -1,0 +1,111 @@
+package main
+
+import (
+	"net"
+	"fmt"
+    //"io"
+    //"os"
+	//"bufio"
+)
+
+
+
+
+
+func main(){
+
+    
+    // TCP
+    // CLIENT
+    serverAddr, err := net.ResolveTCPAddr("tcp", "129.241.187.161:34933")
+    if err != nil {
+	    fmt.Println(err)
+    }
+
+    con, err := net.DialTCP("tcp", nil, serverAddr);
+    if err != nil {
+	    fmt.Println(err)
+    }
+    go receiver(con)
+
+    con.Write([]byte("hello tcp world\x00"))
+    con.Write([]byte("so fancy\x00"))
+
+
+    con.Write([]byte("Connect to: 129.241.187.157:34933\x00"))
+
+
+    
+    // SERVER
+    listener, err := net.Listen("tcp", ":34933")
+    if err != nil {
+        fmt.Println(err)
+    }
+    defer listener.Close()
+    for {
+        newCon, err := listener.Accept()
+        if err != nil {
+            fmt.Println(err)
+        }
+        go receiver(newCon)
+        newCon.Write([]byte("nc:hello tcp world\x00"))
+        newCon.Write([]byte("nc:so fancy\x00"))
+
+    }
+    
+
+    // UDP
+
+    // RECIEVER
+    
+    newBuf := make([]byte, 1024)
+    addr, err := net.ResolveUDPAddr("udp", ":20019")
+    if err != nil{
+        fmt.Println(err)
+    }
+    sock, err := net.ListenUDP("udp", addr)
+    if err != nil{
+        fmt.Println(err)
+    }
+
+
+    // CLIENT
+    serverAddr, err := net.ResolveUDPAddr("udp", "129.241.187.255:20019")
+    if err != nil{
+        fmt.Println(err)
+    }
+    con, err := net.DialUDP("udp", nil, serverAddr)
+    if err != nil{
+        fmt.Println(err)
+    }
+
+
+    _, err2 := con.Write([]byte("hello udp world"))
+    if err2 != nil{
+        fmt.Println(err2)
+    }
+    fmt.Println("adf")
+
+    
+    for {
+        _, _, err = sock.ReadFromUDP(newBuf)
+        if err != nil{
+            fmt.Println(err)
+        }
+        fmt.Println(string(newBuf))
+    }
+
+
+
+
+}
+
+func receiver(c net.Conn) {
+    defer c.Close()
+    for {
+        //io.Copy(os.Stdout, c)
+        buf := make([]byte, 1024)
+        c.Read(buf)
+        fmt.Println(string(buf))
+    }
+}
